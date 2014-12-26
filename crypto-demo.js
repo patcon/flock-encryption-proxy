@@ -47,11 +47,10 @@ var encrypt = function (plain_text) {
     hmac = crypto.createHmac(HMAC_ALGO, HMAC_KEY);
     hmac.update(new Buffer.concat([version, iv, cipher_text]));
 
+    // The IV isn't a secret so it can be stored along side everything else
     var blob = new Buffer.concat([version, iv, cipher_text, hmac.digest()]);
 
-    // The IV isn't a secret so it can be stored along side everything else
     return blob.toString('base64');
-
 };
 
 var decrypt = function (cipher_text) {
@@ -72,9 +71,8 @@ var decrypt = function (cipher_text) {
 
     decryptor = crypto.createDecipheriv(CIPHER_ALGO, CIPHER_KEY, iv);
     decryptor.update(ct);
+
     return decryptor.final('utf-8')
-
-
 };
 
 var constant_time_compare = function (val1, val2) {
@@ -92,7 +90,7 @@ var constant_time_compare = function (val1, val2) {
     return sentinel === 0
 };
 
-var blob = encrypt("FOO");
-console.log(blob);
-var unblob = decrypt(blob);
-console.log(unblob);
+module.exports = {
+  encrypt: encrypt,
+  decrypt: decrypt,
+}
