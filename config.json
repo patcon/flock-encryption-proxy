@@ -1,0 +1,10 @@
+{
+  "username": "patcon@custom",
+  "password": "p4ssw0rd",
+  "salt": "Z9w0zXSvQQU=",
+  "cipherKey": "PhZa80vlSXcXVpopnoJGNo09lhAw14om0AuDg1TJibs=",
+  "macKey": "qoRkdOEX31SvBwaqscFRmxvqlLyGvonCfnEZ2QXR9+Y=",
+  "calcAuthToken": "99d07a1b3c33fff1cdf9cab299d99a92",
+  "calcKeyMaterialKey": "6bcd349f36c2216cf72897dfb7d9d9fd",
+  "encKeyMaterial": "AVT6F15LZifGjbUySA4CXqsgj7CWxE+/YY5lux6QGL+WJwFmRrWWrficgzc/oivlYSkTfBVSZuidKPi3peIOYjq2Bopy0qTI3yHa5MgdY+8vkJFAUVFHJLf3z966JMp75oN3ZJGHkoIVV62+XV1p5QjbMANxskT+gDBuvohHAGW9"
+}
