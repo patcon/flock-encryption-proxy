@@ -16,14 +16,14 @@
  */
 
 
-var crypto, config, ALGORITHM, KEY, HMAC_ALGORITHM, HMAC_KEY, MAC_LENGTH_BYTES, IV_LENGTH_BYTES;
+var crypto, config, CIPHER_ALGO, CIPHER_KEY, HMAC_ALGO, HMAC_KEY, MAC_LENGTH_BYTES, IV_LENGTH_BYTES;
 
 crypto = require('crypto');
 config = require('./config.json');
 
-ALGORITHM = 'AES-256-CBC'; // CBC because CTR isn't possible with the current version of the Node.JS crypto library
-HMAC_ALGORITHM = 'SHA256';
-KEY = new Buffer(config.cipherKey, 'base64');
+CIPHER_ALGO = 'AES-256-CBC'; // CBC because CTR isn't possible with the current version of the Node.JS crypto library
+HMAC_ALGO = 'SHA256';
+CIPHER_KEY = new Buffer(config.cipherKey, 'base64');
 HMAC_KEY = new Buffer(config.macKey, 'base64');
 
 MAC_LENGTH_BYTES = 32;
@@ -32,23 +32,23 @@ IV_LENGTH_BYTES = 16;
 var encrypt = function (plain_text) {
 
     var version = new Buffer([1]);
-    var IV = new Buffer(crypto.randomBytes(16)); // ensure that the IV (initialization vector) is random
+    var iv = new Buffer(crypto.randomBytes(16)); // ensure that the IV (initialization vector) is random
     var cipher_text;
     var cipher_arr;
     var hmac;
     var encryptor;
 
-    encryptor = crypto.createCipheriv(ALGORITHM, KEY, IV);
+    encryptor = crypto.createCipheriv(CIPHER_ALGO, CIPHER_KEY, iv);
     cipher_arr = [];
     cipher_arr.push(encryptor.update(plain_text, 'utf8'));
     cipher_arr.push(encryptor.final());
     cipher_text = new Buffer.concat(cipher_arr);
 
-    hmac = crypto.createHmac(HMAC_ALGORITHM, HMAC_KEY);
+    hmac = crypto.createHmac(HMAC_ALGO, HMAC_KEY);
     hmac.update(cipher_text);
-    hmac.update(IV); // ensure that both the IV and the cipher-text is protected by the HMAC
+    hmac.update(iv); // ensure that both the IV and the cipher-text is protected by the HMAC
 
-    var blob = new Buffer.concat([version, IV, cipher_text, hmac.digest()]);
+    var blob = new Buffer.concat([version, iv, cipher_text, hmac.digest()]);
 
     // The IV isn't a secret so it can be stored along side everything else
     return blob.toString('base64');
@@ -58,21 +58,21 @@ var encrypt = function (plain_text) {
 var decrypt = function (cipher_text) {
     var blob    = new Buffer(cipher_text, 'base64');
     var version = blob[0];
-    var IV      = blob.slice(1, 1+IV_LENGTH_BYTES);
+    var iv      = blob.slice(1, 1+IV_LENGTH_BYTES);
     var ct      = blob.slice(1+IV_LENGTH_BYTES, blob.length-MAC_LENGTH_BYTES);
     var hmac    = blob.slice(blob.length-MAC_LENGTH_BYTES, blob.length);
     var decryptor;
 
-    chmac = crypto.createHmac(HMAC_ALGORITHM, HMAC_KEY);
+    chmac = crypto.createHmac(HMAC_ALGO, HMAC_KEY);
     chmac.update(ct);
-    chmac.update(IV);
+    chmac.update(iv);
 
     if (!constant_time_compare(chmac.digest('hex'), hmac.toString('hex'))) {
         console.log("Encrypted Blob has been tampered with...");
         return null;
     }
 
-    decryptor = crypto.createDecipheriv(ALGORITHM, KEY, IV);
+    decryptor = crypto.createDecipheriv(CIPHER_ALGO, CIPHER_KEY, iv);
     decryptor.update(ct);
     return decryptor.final('utf-8')
 
