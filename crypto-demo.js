@@ -45,8 +45,7 @@ var encrypt = function (plain_text) {
     cipher_text = new Buffer.concat(cipher_arr);
 
     hmac = crypto.createHmac(HMAC_ALGO, HMAC_KEY);
-    hmac.update(cipher_text);
-    hmac.update(iv); // ensure that both the IV and the cipher-text is protected by the HMAC
+    hmac.update(new Buffer.concat([version, iv, cipher_text]));
 
     var blob = new Buffer.concat([version, iv, cipher_text, hmac.digest()]);
 
@@ -57,15 +56,14 @@ var encrypt = function (plain_text) {
 
 var decrypt = function (cipher_text) {
     var blob    = new Buffer(cipher_text, 'base64');
-    var version = blob[0];
+    var version = blob.slice(0, 1);
     var iv      = blob.slice(1, 1+IV_LENGTH_BYTES);
     var ct      = blob.slice(1+IV_LENGTH_BYTES, blob.length-MAC_LENGTH_BYTES);
     var hmac    = blob.slice(blob.length-MAC_LENGTH_BYTES, blob.length);
     var decryptor;
 
     chmac = crypto.createHmac(HMAC_ALGO, HMAC_KEY);
-    chmac.update(ct);
-    chmac.update(iv);
+    chmac.update(new Buffer.concat([version, iv, ct]));
 
     if (!constant_time_compare(chmac.digest('hex'), hmac.toString('hex'))) {
         console.log("Encrypted Blob has been tampered with...");
