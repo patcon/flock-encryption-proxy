@@ -34,19 +34,19 @@ var encrypt = function (plain_text) {
     var version = new Buffer([1]);
     var IV = new Buffer(crypto.randomBytes(16)); // ensure that the IV (initialization vector) is random
     var cipher_text;
+    var cipher_arr;
     var hmac;
     var encryptor;
 
     encryptor = crypto.createCipheriv(ALGORITHM, KEY, IV);
-    //encryptor.setEncoding('hex');
-    encryptor.write(plain_text);
-    encryptor.end();
-
-    cipher_text = encryptor.read();
+    cipher_arr = [];
+    cipher_arr.push(encryptor.update(plain_text, 'utf8'));
+    cipher_arr.push(encryptor.final());
+    cipher_text = new Buffer.concat(cipher_arr);
 
     hmac = crypto.createHmac(HMAC_ALGORITHM, HMAC_KEY);
-    hmac.update(cipher_text.toString('hex'));
-    hmac.update(IV.toString('hex')); // ensure that both the IV and the cipher-text is protected by the HMAC
+    hmac.update(cipher_text);
+    hmac.update(IV); // ensure that both the IV and the cipher-text is protected by the HMAC
 
     var blob = new Buffer.concat([version, IV, cipher_text, hmac.digest()]);
 
@@ -56,24 +56,24 @@ var encrypt = function (plain_text) {
 };
 
 var decrypt = function (cipher_text) {
-    var blob = new Buffer(cipher_text, 'base64');
+    var blob    = new Buffer(cipher_text, 'base64');
     var version = blob[0];
     var IV      = blob.slice(1, 1+IV_LENGTH_BYTES);
-    var ct      = blob.slice(1+IV_LENGTH_BYTES, blob.length-MAC_LENGTH_BYTES).toString('hex');
-    var hmac    = blob.slice(blob.length-MAC_LENGTH_BYTES, blob.length).toString('hex');
+    var ct      = blob.slice(1+IV_LENGTH_BYTES, blob.length-MAC_LENGTH_BYTES);
+    var hmac    = blob.slice(blob.length-MAC_LENGTH_BYTES, blob.length);
     var decryptor;
 
     chmac = crypto.createHmac(HMAC_ALGORITHM, HMAC_KEY);
     chmac.update(ct);
-    chmac.update(IV.toString('hex'));
+    chmac.update(IV);
 
-    if (!constant_time_compare(chmac.digest('hex'), hmac)) {
+    if (!constant_time_compare(chmac.digest('hex'), hmac.toString('hex'))) {
         console.log("Encrypted Blob has been tampered with...");
-        //return null;
+        return null;
     }
 
     decryptor = crypto.createDecipheriv(ALGORITHM, KEY, IV);
-    decryptor.update(ct, 'hex', 'utf8');
+    decryptor.update(ct);
     return decryptor.final('utf-8')
 
 
@@ -81,8 +81,6 @@ var decrypt = function (cipher_text) {
 
 var constant_time_compare = function (val1, val2) {
     var sentinel;
-    console.log(val1);
-    console.log(val2);
 
     if (val1.length !== val2.length) {
         return false;
