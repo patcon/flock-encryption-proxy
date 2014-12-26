@@ -45,7 +45,7 @@ var encrypt = function (plain_text) {
     cipher_text = encryptor.read();
 
     hmac = crypto.createHmac(HMAC_ALGORITHM, HMAC_KEY);
-    hmac.update(cipher_text);
+    hmac.update(cipher_text.toString('hex'));
     hmac.update(IV.toString('hex')); // ensure that both the IV and the cipher-text is protected by the HMAC
 
     var blob = new Buffer.concat([version, IV, cipher_text, hmac.digest()]);
